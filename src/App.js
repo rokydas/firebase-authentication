@@ -27,6 +27,9 @@ function App() {
     photo: ''
   })
 
+  const [noti, setNoti] = useState('');
+  const [color, setColor] = useState('');
+
   const handleSignIn = () => {
     console.log("it's working YAY");
     firebase.auth().signInWithPopup(provider)
@@ -67,64 +70,47 @@ function App() {
     })
   }
 
-  let isEmailValid, isPasswordValid;
+  const handleBlur = (event) => {
+  
+    let isFieldValid = true;
 
-
-  // My trying
-  // const handleBlur = (event) => {
-    
-  //   // console.log(event.target.name, event.target.value);
-  //   if(event.target.name === 'email'){
-  //     isEmailValid = /\S+@\S+\.\S+/.test(event.target.value);
-  //   }
-  //   if(event.target.name === 'password'){
-  //     isPasswordValid = event.target.value.length >= 6 && /\d{1}/.test(event.target.value);
-  //   }
-  //   if(isEmailValid && event.target.name === 'email'){
-  //     const newUser = {...user};
-  //     newUser[event.target.name] = event.target.value;
-  //     setUser(newUser);
-  //   }
-  //   if(isPasswordValid  && event.target.name === 'password'){
-  //     const newUser = {...user};
-  //     newUser[event.target.name] = event.target.value;
-  //     setUser(newUser);
-  //   }
-  //   else{
-  //     console.log('jhamala ase');
-  //   }
-  // }
-
-  // According to jhankar vhai
-
-  const is_valid_email = email =>  /(.+)@(.+){2,}\.(.+){2,}/.test(email); 
-  const hasNumber = input => /\d/.test(input);
-
-  const handleBlur = (event) =>{
-    const newUserInfo = {
-      ...user
-    };
-    //debugger;
-    // perform validation
-    let isValid = true;
+    // console.log(event.target.name, event.target.value);
     if(event.target.name === 'email'){
-      isValid = is_valid_email(event.target.value);
+      isFieldValid = /\S+@\S+\.\S+/.test(event.target.value);
     }
-    if(event.target.name === "password"){
-      isValid = event.target.value.length > 8 && hasNumber(event.target.value);
+    if(event.target.name === 'password'){
+      isFieldValid = event.target.value.length >= 6 && /\d{1}/.test(event.target.value);
     }
-
-    newUserInfo[event.target.name] = event.target.value;
-    newUserInfo.isValid = isValid;
-    setUser(newUserInfo);
+    if(isFieldValid){
+      const newUser = {...user};
+      newUser[event.target.name] = event.target.value;
+      setUser(newUser);
+    }
   }
 
-  const handleSubmit = () => {
-
+  const handleSubmit = (event) => {
+    if(user.email && user.password){
+      firebase.auth().createUserWithEmailAndPassword(user.email, user.password)
+      .then(res => {
+        console.log(res);
+        setNoti('User created successfully');
+        setColor('green');
+      })
+      .catch(error => {
+        // Handle Errors here.
+        var errorCode = error.code;
+        var errorMessage = error.message;
+        console.log(errorCode, errorMessage);
+        // ...
+        setNoti(errorMessage)
+        setColor('red');
+      });
+    }
+    event.preventDefault();
   }
 
   return (
-    <div>
+    <div className="app">
       {
         user.isSignedIn ? <button onClick={handleSignOut} style={btnStyle}>Sign out</button> 
         : <button onClick={handleSignIn} style={btnStyle}>Sign in</button>
@@ -153,8 +139,11 @@ function App() {
       <form onSubmit={handleSubmit}>
         <input name="email" type="text" onBlur={handleBlur} placeholder="Your Email address" required/><br/>
         <input name="password" type="password" onBlur={handleBlur} placeholder="Password" id="" required/><br/>
-        <input type="submit" value="Sign In"/>
+        <input type="submit" onClick={handleSubmit} value="Sign In"/>
       </form>
+      {
+        <h3 style={{color: color}}>{noti}</h3>
+      }
     </div>
   );
 }
